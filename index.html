@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Отправка уведомлений Telegram</title>
+</head>
+<body>
+    <h2>Отправить сообщение через Telegram Бот</h2>
+    <input type="text" id="message" placeholder="Введите сообщение" style="width: 300px;">
+    <button onclick="sendMessages()">Отправить</button>
+
+    <script>
+        const BOT_TOKEN = '7713135703:AAEkRQX8Ub2AwzXq8WC3ouD9M883AW1mBEk'; // Укажите ваш токен
+        const API_URL = 'http://localhost:5000/api/get_chat_ids';
+
+        async function sendMessages() {
+            const message = document.getElementById('message').value;
+            if (!message) {
+                alert('Пожалуйста, введите сообщение');
+                return;
+            }
+
+            console.log("[LOG] Начинаю отправку сообщений");
+
+            try {
+                // Запрашиваем все chat_id из API
+                const response = await fetch(API_URL);
+                console.log("[LOG] Ответ от API получен", response);
+
+                if (!response.ok) {
+                    throw new Error(`[ERROR] Ошибка при получении данных с сервера: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("[LOG] Данные от API:", data);
+
+                if (!data.chat_ids || data.chat_ids.length === 0) {
+                    alert('Нет пользователей для отправки сообщения');
+                    return;
+                }
+
+                // Отправляем сообщение каждому chat_id параллельно
+                const sendPromises = data.chat_ids.map(chatId => sendMessageToUser(chatId, message));
+
+                // Ждем выполнения всех запросов
+                await Promise.all(sendPromises);
+
+                alert('Сообщение успешно отправлено всем пользователям!');
+                document.getElementById('message').value = '';
+
+            } catch (error) {
+                console.error('[ERROR] Ошибка при отправке запроса:', error);
+                alert('Произошла ошибка при отправке запроса');
+            }
+        }
+
+        async function sendMessageToUser(chatId, message) {
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+            const params = {
+                chat_id: chatId,
+                text: message,
+                parse_mode: 'HTML'
+            };
+
+            console.log(`[LOG] Отправка сообщения пользователю ${chatId}`);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(params)
+                });
+
+                if (!response.ok) {
+                    console.error(`[ERROR] Ошибка при отправке сообщения пользователю ${chatId}: ${response.statusText}`);
+                } else {
+                    console.log(`[LOG] Сообщение успешно отправлено пользователю ${chatId}`);
+                }
+            } catch (error) {
+                console.error('[ERROR] Ошибка при отправке сообщения:', error);
+            }
+        }
+    </script>
+</body>
+</html>
