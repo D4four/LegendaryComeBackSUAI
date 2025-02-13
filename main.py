@@ -25,7 +25,7 @@ conn.close()
 print("База данных и таблица users успешно созданы.")
 
 # Укажите ваш Telegram Bot Token
-bot = telebot.TeleBot('7713135703:AAEkRQX8Ub2AwzXq8WC3ouD9M883AW1mBEk')
+bot = telebot.TeleBot('')
 
 # Функция для добавления нового пользователя в базу данных
 def add_user_to_db(chat_id, first_name, last_name, username):
